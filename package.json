@@ -1,0 +1,15 @@
+{
+  "name": "rodsv3-server-lh",
+  "version": "1.0.0",
+  "description": "node server for rods game v3",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Laurence Howells",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.1.1"
+  }
+}
