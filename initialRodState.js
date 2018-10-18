@@ -84,14 +84,14 @@ module.exports = {
         let left = 2
         let top = 28.75
         
-        for (var i = 0; i < recipe.length; i++) {
-        
+        // for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < recipe.length; i++) {
             if (left + recipe[i].length + 1.5 > 30) {
                 left = 1.5 +recipe[i].length/2
                 top += 1.5
             }
             //make 10 of each
-           
+            // for (var j = 0; j < 1; j++) {
             for (var j = 0; j < 10; j++) {
                 let myRod = {
                     colour: recipe[i].colour,

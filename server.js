@@ -43,7 +43,8 @@ io.on('connection', (socket) => {
             rodsState: rodSetup.setUpInitialRodState(),
             peopleState: [],
             placesState: [],
-            boxesState: []
+            boxesState: [],
+            objectsState: rodSetup.setUpInitialRodState(),
         }
         io.sockets.adapter.rooms[data.room].gameState = newGameState
 
@@ -65,8 +66,10 @@ io.on('connection', (socket) => {
     })
 
     socket.on('objectMoved', (object) => {
-
+       
             updateGameStateForObjMoved(socket, object)
+           
+       
     })
 
     socket.on('addNewItem', (object) => {
@@ -75,6 +78,12 @@ io.on('connection', (socket) => {
 
     socket.on('itemRemoved', (object) => {
         removeObject(socket, object)
+    })
+
+    socket.on('deselectItem', ()=> {
+        //this is needed so that you can rotate a rod and control when it is deselected
+        console.log('deselect Rod')
+        socket.to(socket.gameCode).emit('deselectRod')
     })
 
 })
@@ -102,19 +111,22 @@ updateGameStateForSelection = function (socket, object) {
                 break;
             default:
         }
-        myArray = gameState[relevantArray]
-
+        // myArray = gameState[relevantArray]
+        myArray = gameState.objectsState
         for (var x = 0; x < myArray.length; x++) {
             if (myArray[x].id == object.id) {
                 myArray[x].selected = true
+                myArray.push(myArray[x])
+                myArray.splice(x, 1)
             }
             myArray[x].oldLeft = myArray[x].left
             myArray[x].oldTop = myArray[x].top
             myArray[x].oldAngle = myArray[x].angle
             // myArray[x].zIndex = object.zIndex
+            
         }
         socket.to(socket.gameCode).emit('currentGameState', io.sockets.adapter.rooms[socket.gameCode].gameState)
-     
+        // socket.emit('selectedRod', object)
         // console.log(io.sockets.adapter.rooms[socket.gameCode].gameState)
     } else {
         console.log('you are not in a game room!')
@@ -144,8 +156,8 @@ updateGameStateForObjMoved = function (socket, object) {
             default:
         }
 
-        myArray = gameState[relevantArray]
-
+        // myArray = gameState[relevantArray]
+        myArray = gameState.objectsState
         for (var w = 0; w < myArray.length; w++) {
             myArray[w].onTop = false
         }
@@ -160,9 +172,11 @@ updateGameStateForObjMoved = function (socket, object) {
 
                 myArray.push(myArray[x])
                 myArray.splice(x, 1)
-               
+            
+                // socket.to(socket.gameCode).emit('animate', true)
+                // io.in(socket.gameCode).emit('currentGameState', io.sockets.adapter.rooms[socket.gameCode].gameState)
                 socket.to(socket.gameCode).emit('currentGameState', io.sockets.adapter.rooms[socket.gameCode].gameState)
-
+                socket.emit('currentGameStateNoAnimate', io.sockets.adapter.rooms[socket.gameCode].gameState)
                 return
             }
 
@@ -176,6 +190,12 @@ updateGameStateForObjMoved = function (socket, object) {
 
 deselectAll = function (gameCode) {
     let gameState = io.sockets.adapter.rooms[gameCode].gameState
+  
+    for (var q = 0; q < gameState.objectsState.length; q++) {
+        gameState.objectsState[q].selected = false
+        // ??WARNING DO YOU NEED TO SORT OUT OLD POS SEE BELW
+    }
+
     for (var x = 0; x < gameState.rodsState.length; x++) {
         gameState.rodsState[x].selected = false
 
@@ -200,8 +220,7 @@ deselectAll = function (gameCode) {
 
 addNewObject = function (socket, object) {
 
-    console.log(object)
-    console.log(socket.gameCode)
+   
     deselectAll(socket.gameCode)
     gameState = io.sockets.adapter.rooms[socket.gameCode].gameState
     switch (object.type) {
@@ -219,6 +238,7 @@ addNewObject = function (socket, object) {
                 id: "Person" + gameState.peopleState.length + 1
             }
             gameState.peopleState.push(myFemale)
+            gameState.objectsState.push(myFemale)
             io.in(socket.gameCode).emit('currentGameState', gameState)
             break;
         case 'm':
@@ -235,6 +255,7 @@ addNewObject = function (socket, object) {
                 id: "Person" + gameState.peopleState.length + 1
             }
             gameState.peopleState.push(myMale)
+            gameState.objectsState.push(myMale)
             io.in(socket.gameCode).emit('currentGameState', gameState)
             break;
         case 'place':
@@ -251,6 +272,7 @@ addNewObject = function (socket, object) {
                 id: "Place" + gameState.placesState.length + 1
             }
             gameState.placesState.push(myPlace)
+            gameState.objectsState.push(myPlace)
             io.in(socket.gameCode).emit('currentGameState', gameState)
             break;
         case 'box':
@@ -264,10 +286,10 @@ addNewObject = function (socket, object) {
                 oldLeft: 20,
                 top: 15,
                 oldTop: 15,
-                id: "Place" + gameState.boxesState.length + 1
+                id: "Box" + gameState.boxesState.length + 1
             }
             gameState.boxesState.push(myBox)
-
+            gameState.objectsState.push(myBox)
 
             io.in(socket.gameCode).emit('currentGameState', gameState)
         default:
@@ -295,8 +317,10 @@ addNewObject = function (socket, object) {
                 default:
             }
     
-            myArray = gameState[relevantArray]
+            // myArray = gameState[relevantArray]
     
+            myArray = gameState.objectsState
+
             for (var i = 0; i < myArray.length; i++) {
                             if (myArray[i].id == object.id) {
                                 myArray.splice(i, 1)
